@@ -1,41 +1,46 @@
-import os
-import sys
+# Part. 1
+#=======================================
+# Import module
+#  csv -- fileIO operation
+import csv
+#=======================================
 
-env_p = sys.prefix  # path to the env
-"""print("Env. path: {}".format(env_p))
-"""
-new_p = ''
-for extra_p in (r"Library\mingw-w64\bin",
-    r"Library\usr\bin",
-    r"Library\bin",
-    r"Scripts",
-    r"bin"):
-    new_p +=  os.path.join(env_p, extra_p) + ';'
+# Part. 2
+#=======================================
+# Read cwb weather data
+cwb_filename = '106061216.csv'
+data = []
+header = []
+with open(cwb_filename) as csvfile:
+   mycsv = csv.DictReader(csvfile)
+   header = mycsv.fieldnames
+   for row in mycsv:
+      data.append(row)
+#=======================================
 
-os.environ["PATH"] = new_p + os.environ["PATH"]  # set it for Python
-os.putenv("PATH", os.environ["PATH"])  # push it at the OS level
 
-import pandas as pd
+cropped = []
+for i in data:
+    if not(float(i['PRES']) == -999.0 or float(i['PRES']) == -99.0):
+        cropped.append(i)
 
-df = pd.read_csv('./106061216.csv')
 
-df = df.set_index("PRES")
+target = ["C0A880","C0F9A0","C0G640","C0R190","C0X260"]
 
-try:
-    df = df.drop(-99, axis=0)
-except:
-    None
-try:
-    df = df.drop(-999, axis=0)
-except:
-    None
-df = df.reset_index()
+def find_mean(target,list_dict):
+    counts = 0
+    acc = 0
+    for i in list_dict:
+        if i["station_id"] == target:
+            counts = counts + 1
+            acc = acc + float(i['PRES'])
+    if counts == 0:
+        return 'None'
+    else:
+        return acc/counts
 
-target_list = ["C0A880","C0F9A0","C0G640","C0R190","C0X260"]
 answer = []
-    
-for i in target_list:
-    k = df[['PRES']].where(df[['station_id']].values == i).stack().mean()
-    answer.append([i , None if k != k else k])
+for i in target:
+    answer.append([i,find_mean(i,cropped)])
 
 print(answer)
